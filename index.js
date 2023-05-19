@@ -15,7 +15,13 @@ const port = process.env.port || 6969;
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(cors({
-    origin: ["http://localhost:5173",'http://localhost:1234', "https://project-iii-front.vercel.app", "https://project-iii-front-company.vercel.app"],
+    origin: ["http://localhost:5173",
+        'http://localhost:1234', 
+        "https://project-iii-front.vercel.app", 
+        "https://project-iii-front-company.vercel.app",
+        "https://thai-networking.vercel.app/",
+        "https://thai-networking-business.vercel.app/"
+    ],
     credentials: true
 }
 ))
