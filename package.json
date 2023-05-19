@@ -1,0 +1,43 @@
+{
+  "name": "instargram_backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "set NODE_ENV=development && nodemon --inspect index.js",
+    "build": "set NODE_ENV=production && nodemon --inspect index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+   
+  },
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.5.0",
+    "body-parser": "^1.20.1",
+    "client-sessions": "^0.8.0",
+    "cookie": "^0.5.0",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-jwt": "^7.7.5",
+    "generate-password": "^1.7.0",
+    "googleapis": "^109.0.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongoosastic": "^5.0.0",
+    "mongoose": "^6.6.5",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.8.0",
+    "passport": "^0.6.0",
+    "passport-local": "^1.0.0",
+    "path": "^0.12.7",
+    "uuid": "^9.0.0",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  },
+  "engines": {
+    "node": "18.12.1"
+  }
+}
