@@ -19,8 +19,8 @@ app.use(cors({
         'http://localhost:1234', 
         "https://project-iii-front.vercel.app", 
         "https://project-iii-front-company.vercel.app",
-        "https://thai-networking.vercel.app/",
-        "https://thai-networking-business.vercel.app/"
+        "https://thai-networking.vercel.app",
+        "https://thai-networking-business.vercel.app"
     ],
     credentials: true
 }
