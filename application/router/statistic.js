@@ -19,5 +19,19 @@ router.get('/', auth.required, authorize.canReadStatistic, async (req, res) => {
     }
 })
 
+router.get('/based-employer', auth.required, authorize.canReadStatistic, async(req,res)=>{
+    try {
+        const { from, to, email } = req.query;
+        const {companyId} = req;
+        const result = await statisticService.getBasedEmployer(from, to, companyId, email);
+        res.json(result);
+    } catch (err) {
+        res.status(400);
+        res.json({
+            code: err.message
+        })
+    }
+})
+
 
 module.exports = router
