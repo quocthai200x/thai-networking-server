@@ -33,5 +33,35 @@ router.get('/based-employer', auth.required, authorize.canReadStatistic, async(r
     }
 })
 
+router.get('/candidate-funnel', auth.required, authorize.canReadStatistic, async(req,res)=>{
+    try {
+        const { from, to, employerEmail, jobName } = req.query;
+        const {companyId} = req;
+        const result = await statisticService.getCandidateFunnel(from, to, employerEmail, jobName, companyId);
+        res.json(result);
+    } catch (err) {
+        res.status(400);
+        res.json({
+            code: err.message
+        })
+    }
+})
+
+
+
+router.get('/get-list-statistics', auth.required, authorize.canReadStatistic, async(req,res)=>{
+    try {
+        const { from, to, employerEmail, jobName } = req.query;
+        const {companyId} = req;
+        const result = await statisticService.getListStatistic(from, to, employerEmail, jobName, companyId);
+        res.json(result);
+    } catch (err) {
+        res.status(400);
+        res.json({
+            code: err.message
+        })
+    }
+})
+
 
 module.exports = router

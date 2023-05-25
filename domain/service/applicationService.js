@@ -190,6 +190,8 @@ const ApplicationService = {
             && applicationDictionary.created.isUser(applicationFound.createdBy)
         ) {
             applicationFound.status = applicationDictionary.status.approve;
+            applicationFound.approvedAt = Date.now()
+
             const result = await applicationFound.save();
             if (result) {
                 return result;
@@ -209,6 +211,8 @@ const ApplicationService = {
             && applicationFound.candidateId.toString() == userId
         ) {
             applicationFound.status = applicationDictionary.status.approve;
+            applicationFound.approvedAt = Date.now()
+
             const result = await applicationFound.save();
             if (result) {
                 return result;
@@ -288,20 +292,21 @@ const ApplicationService = {
 
         ) {
             let interviewStatus = null;
-            console.log(applicationFound.jobId.info.recruitmentProcess)
+            // console.log(applicationFound.jobId.info.recruitmentProcess)
             // đang giai đoạn approve mới được value 1 (approve --> interview)
             if (type == 'set-interview' && applicationFound.status.value == applicationDictionary.status.approve.value) {
                 interviewStatus = applicationDictionary.status.interview
                 if (applicationFound.jobId.info.recruitmentProcess.length > 0) {
                     interviewStatus.note = applicationFound.jobId.info.recruitmentProcess[0]
                 }
+                applicationFound.interviewedAt = Date.now()
+                
             }
             // giai đoạn nếu có vòng phỏng vấn value 2 (invterview --> interview)
             if (type == 'continue-interview'
                 &&
                 (
                     applicationFound.status.value == applicationDictionary.status.interview.value
-
                     || (statusIndex == 0 && applicationFound.status.value == applicationDictionary.status.approve.value)
                 )
                 && applicationFound.jobId.info.recruitmentProcess.length > 0
@@ -310,11 +315,13 @@ const ApplicationService = {
                 if (statusIndex >= applicationFound.jobId.info.recruitmentProcess.length) {
                     statusIndex = applicationFound.jobId.info.recruitmentProcess.length - 1
                 }
+                applicationFound.interviewedAt = Date.now()
                 interviewStatus.note = applicationFound.jobId.info.recruitmentProcess[statusIndex]
             }
             // giai đoạn có thể ấn offer value 2 (interview --> offer)
             if (type == 'offer' && applicationFound.status.value == applicationDictionary.status.interview.value) {
                 interviewStatus = applicationDictionary.status.offer
+                applicationFound.offeredAt = Date.now()
             }
             if (!interviewStatus) {
                 throw new Error("Something wrong with type")
