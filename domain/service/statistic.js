@@ -323,7 +323,7 @@ const StatisticService = {
             }
           ])
           
-        return applicationCountFound;
+        return {data: applicationCountFound, isQueryEmployer: employerEmail?true:false, isQueryJob: jobName?true:false};
     },
     getCandidateFunnel: async (from, to, employerEmail, jobName, companyId) => {
         if ((typeof to !== 'string' || isNaN(new Date(to).getTime())) || (typeof from !== 'string' || isNaN(new Date(from).getTime()))) {
