@@ -533,61 +533,53 @@ const StatisticService = {
             throw new Error("Không có nhân viên này")
         }
     },
-    getAll: async (from, to, companyId) => {
-        let fromDate;
-        let toDate;
-        if (!from) {
-            fromDate = new Date('2000-01-01')
-        } else {
-            fromDate = new Date(from); // Replace with your 'from' date
+    getAll: async (from, to, employerEmail, jobName, companyId)=> {
+        if ((typeof to !== 'string' || isNaN(new Date(to).getTime())) || (typeof from !== 'string' || isNaN(new Date(from).getTime()))) {
+            to = "2100-01-01";
+            from ="1970-01-01";
         }
-        if (!to) {
-            toDate = new Date("2100-01-01")
-        } else {
-            toDate = new Date(to);
+        let employerId = "";
+        let jobId= "";
+        if(employerEmail){
+            const userFound = await User.findOne({email: employerEmail, companyId, roleNumber: 2})
+            if(userFound){
+                employerId = userFound._id
+            }
         }
-        const [
-            applicationTurnIn,
-            applicationApprove,
-            applicationInterview,
-            applicationOffer,
-            applicationHired,
-            applicationNotQualify,
-            applicationDenied
-        ]
-            = await Promise.all([
-                Application.aggregate(getApplicationBasedNotEndStatus({
-                    statusValue: applicationDictionary.status.turnIn.value, companyId
-                })),
-                Application.aggregate(getApplicationBasedNotEndStatus({
-                    statusValue: applicationDictionary.status.approve.value, companyId
-                })),
-                Application.aggregate(getApplicationBasedNotEndStatus({
-                    statusValue: applicationDictionary.status.interview.value, companyId
-                })),
-                Application.aggregate(getApplicationBasedNotEndStatus({
-                    statusValue: applicationDictionary.status.offer.value, companyId
-                })),
-                Application.aggregate(getApplicationBasedEndStatus({
-                    statusValue: applicationDictionary.status.getHired.value, from: fromDate, to: toDate, companyId
-                })),
-                Application.aggregate(getApplicationBasedEndStatus({
-                    statusValue: applicationDictionary.status.notQualify.value, from: fromDate, to: toDate, companyId
-                })),
-                Application.aggregate(getApplicationBasedEndStatus({
-                    statusValue: applicationDictionary.status.rejectByUser.value, from: fromDate, to: toDate, companyId
-                })),
-            ])
+        if(jobName){
+            const jobFound = await Job.findOne({companyId, "info.name": jobName})
+            if(jobFound){
+                jobId = jobFound._id
+            }
+        }
+        let queryCondition = {
+            companyId: mongoose.Types.ObjectId(companyId),
+            ...(employerId && ({
+                handleBy: employerId,
 
-        return {
-            applicationTurnIn,
-            applicationApprove,
-            applicationInterview,
-            applicationOffer,
-            applicationNotQualify,
-            applicationHired,
-            applicationDenied
+            })),
+            ...(jobId && ({
+                jobId: jobId,
+
+            })),
+            updatedAt: {
+                $gte: from,
+                $lte: to
+            }
         }
+
+
+        const [countTurnIn, countApproved, countInterview, countOffered, countGetHired, countNotQualify, countRejectByUser] = await Promise.all([
+            Application.countDocuments({ ...queryCondition,  "status.value": applicationDictionary.status.turnIn.value }),
+            Application.countDocuments({ ...queryCondition,  "status.value": applicationDictionary.status.approve.value }),
+            Application.countDocuments({ ...queryCondition,  "status.value": applicationDictionary.status.interview.value }),
+            Application.countDocuments({ ...queryCondition,  "status.value": applicationDictionary.status.offer.value }),
+            Application.countDocuments({ ...queryCondition,  "status.value": applicationDictionary.status.getHired.value }),
+            Application.countDocuments({ ...queryCondition,  "status.value": applicationDictionary.status.notQualify.value }),
+            Application.countDocuments({ ...queryCondition,  "status.value": applicationDictionary.status.rejectByUser.value }),
+        ])
+
+        return { countTurnIn, countApproved, countInterview, countOffered, countGetHired, countNotQualify, countRejectByUser}
     }
 }
 
