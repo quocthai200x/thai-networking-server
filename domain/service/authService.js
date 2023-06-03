@@ -48,6 +48,8 @@ const authService = {
                     roleNumber: RoleDictionary.admin,
                     companyId: result._id,
                 });
+                newUser.info.name = companyData.name;
+                newUser.info.phone = companyData.phone;
                 newUser.setPassword(password)
                 result = await newUser.save();
                 if (result) {
