@@ -81,4 +81,20 @@ router.get('/get-list-statistics', auth.required, authorize.canReadStatistic, as
 })
 
 
+router.get('/get-leaderboard', auth.required, authorize.canReadStatistic, async(req,res)=>{
+    try {
+        const { from, to, employerEmail, jobName } = req.query;
+        const {companyId} = req;
+        const result = await statisticService.getLeaderBoard(from, to, employerEmail, jobName, companyId);
+        res.json(result);
+    } catch (err) {
+        res.status(400);
+        res.json({
+            code: err.message
+        })
+    }
+})
+
+
+
 module.exports = router

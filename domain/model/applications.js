@@ -8,7 +8,7 @@ let NameValueSchema = new Schema({
         name: { type: String },
         value: Number
     }
-})
+},{ timestamps: true })
 
 let ReviewSchema = new Schema({
     content: String,
@@ -24,6 +24,7 @@ let ApplicationSchema = new Schema({
     createdBy: Number,
     handleBy: { type: Schema.Types.ObjectId, ref: 'User' },
     firstHanddle: String,
+    score: Number,
     companyComment: ReviewSchema,
     candidateComment: ReviewSchema,
     closeAt: { type: Date },

@@ -235,20 +235,11 @@ const jobService = {
         }
     },
     updateModel: async () => {
-        let benefits = []
-        for (let index = 0; index < 3; index++) {
-            benefits.push({
-                svg: "family_restroom",
-                desc: "Lương thưởng tháng thứ 13 hấp dẫn người ứng viên nên là hãy ứng tuyển đi",
-                label: "Gia đình",
-            })
-        }
+        // let benefits = []
         Job.updateMany({}, {
             $set: {
-                status: {
-                    name: "Đang hiển thị",
-                    value: 0
-                },
+                "info.score":1,
+                "info.targetScore": 5,
                 // "info.benefits": benefits
             }
         }, function (err, affected) {

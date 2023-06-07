@@ -42,6 +42,8 @@ let benefitSchema = new Schema({
 
 let jobInfoSchema = new Schema({
     name: String,
+    score: Number,
+    targetScore: Number,
     level: NameValueSchema,
     type: [typeSchema],
     workingAddress: [workingAddress],

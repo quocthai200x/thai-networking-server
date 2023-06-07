@@ -11,6 +11,22 @@ const path = require("path")
 
 
 const ApplicationService = {
+    getNotClose: async(companyId) =>{
+        const applicationFound = await Application.find({companyId, closeAt: { $exists: false } })
+        .populate({ path: "candidateId", select: { "info.name": 1 } })
+        .populate({ path: "jobId", select: { "info.name": 1 } })
+        .populate({ path: "handleBy", select: { "info.name": 1 } })
+        .sort({updatedAt: 1})
+       
+        if (applicationFound) {
+            return {
+                total: applicationFound.length,
+                data: applicationFound,
+            }
+        } else {
+            throw new Error("Not found")
+        }
+    },
     findOneInCompany: async (applicationId, companyId) => {
 
         const applicationFound = await Application.findOne({ _id: applicationId, companyId })
@@ -39,6 +55,7 @@ const ApplicationService = {
     findByJobName: async (jobName, companyId, employeeId) => {
         const jobFound = await Job.findOne({ companyId, "info.name": jobName }).select({ _id: 1 })
         // console.log(jobFound)
+        console.log(jobFound)
         if (jobFound) {
             let applicationFound = await Application.find({ companyId, jobId: jobFound._id }).populate([{ path: "candidateId", select: "info" }, {path: "handleBy", select :"info.name"}])
             if (applicationFound) {
@@ -51,7 +68,7 @@ const ApplicationService = {
             } else {
                 throw new Error("Not found")
             }
-            return 1
+            // return 1
         } else {
             throw new Error("Not found")
         }
@@ -246,8 +263,8 @@ const ApplicationService = {
 
     rejectByUser: async (userId, applicationId) => {
         const applicationFound = await Application.findById(applicationId);
+        console.log(applicationFound)
         if (applicationFound
-            && applicationDictionary.created.isCompany(applicationFound.createdBy)
             && applicationFound.candidateId.toString() == userId
         ) {
             applicationFound.status = applicationDictionary.status.rejectByUser
@@ -268,8 +285,11 @@ const ApplicationService = {
         if (applicationFound
             && applicationFound.status.value == applicationDictionary.status.offer.value
             && applicationFound.candidateId.toString() == userId
-        ) {
+            ) {
+            const jobFound = await Job.findById(applicationFound.jobId)
+
             applicationFound.status = applicationDictionary.status.getHired;
+            applicationFound.score = jobFound.info.score;
             applicationFound.closeAt = Date.now()
             const result = await applicationFound.save();
             if (result) {
