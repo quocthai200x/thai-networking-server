@@ -11,12 +11,21 @@ const path = require("path")
 
 
 const ApplicationService = {
-    getNotClose: async(companyId) =>{
-        const applicationFound = await Application.find({companyId, closeAt: { $exists: false } })
-        .populate({ path: "candidateId", select: { "info.name": 1 } })
-        .populate({ path: "jobId", select: { "info.name": 1 } })
-        .populate({ path: "handleBy", select: { "info.name": 1 } })
-        .sort({updatedAt: 1})
+    getNotClose: async(companyId, employeeId) =>{
+        let applicationFound;
+        if(employeeId){
+            applicationFound = await Application.find({companyId, closeAt: { $exists: false }, handleBy: employeeId })
+            .populate({ path: "candidateId", select: { "info.name": 1 } })
+            .populate({ path: "jobId", select: { "info.name": 1 } })
+            .populate({ path: "handleBy", select: { "info.name": 1 } })
+            .sort({updatedAt: 1})
+        }else{
+            applicationFound = await Application.find({companyId, closeAt: { $exists: false } })
+            .populate({ path: "candidateId", select: { "info.name": 1 } })
+            .populate({ path: "jobId", select: { "info.name": 1 } })
+            .populate({ path: "handleBy", select: { "info.name": 1 } })
+        }
+  
        
         if (applicationFound) {
             return {

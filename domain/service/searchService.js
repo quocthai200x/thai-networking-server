@@ -252,9 +252,9 @@ const SearchService = {
         // console.log(newQuery)
         let result;
         if (keyword) {
-            result = await Company.find(newQuery).select({ "info.name": 1, "info.logo": 1, "info.workingArea.name": 1 }).sort({ score: { $meta: "textScore" } }).limit(limit).skip(limit * pageNumber)
+            result = await Company.find(newQuery).select({ "info.name": 1, "info.logo": 1, "info.workingArea.name": 1 ,"isApproved" : 1}).sort({ score: { $meta: "textScore" } }).limit(limit).skip(limit * pageNumber)
         } else {
-            result = await Company.find(newQuery).select({ "info.name": 1, "info.logo": 1, "info.workingArea.name": 1 }).limit(limit).skip(limit * pageNumber)
+            result = await Company.find(newQuery).select({ "info.name": 1, "info.logo": 1, "info.workingArea.name": 1 , "isApproved" : 1}).limit(limit).skip(limit * pageNumber)
         }
 
         const count = await Company.find(newQuery).count()

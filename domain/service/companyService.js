@@ -3,6 +3,20 @@ var Company = require("../model/companies")
 var mongoose = require("../../infrastructure/db");
 
 const CompanyService = {
+    allowBusiness: async (companyId) => {
+        const company = await Company.findById(companyId);
+        if (!company) {
+            throw new Error("Company not found");
+        }
+
+        // Toggle the value of isApproved
+        company.isApproved = !company.isApproved;
+
+        // Save the updated company
+        await company.save();
+
+        return company;
+    },
     get: async (companyName) => {
         const company = await Company.findOne({ 'info.name': companyName }).select({ info: 1 });
         if (company) {

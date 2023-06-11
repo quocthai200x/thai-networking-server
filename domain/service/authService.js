@@ -27,6 +27,22 @@ const authService = {
             }
         }
     },
+    signUpAdminSystem: async (email, password) => {
+
+        let result = await User.findOne({ email });
+        if (!result) {
+            const newUser = new User({
+                email: email,
+                roleNumber: RoleDictionary.adminSystem
+            });
+            newUser.setPassword(password)
+            result = await newUser.save();
+            // console.log(result);
+            return newUser;
+        } else {
+            throw new Error("error/email_existed or company not found")
+        }
+    },
     signUpAdmin: async (email, password, companyData) => {
         try {
             const checkUser = await User.findOne({ email });
@@ -91,21 +107,21 @@ const authService = {
         });
         newUser.setPassword(password)
         newUser.info.name = name
-        try{
+        try {
 
             const [result, sendMail] = await Promise.all([
                 newUser.save(),
                 Mail.sendMail(email, password),
             ])
-           
+
             if (result && sendMail) {
                 let newUser2 = {
                     _id: newUser._id,
                     email: newUser.email,
-                    info:{
+                    info: {
                         name: newUser.info.name
                     },
-                    roleId:{
+                    roleId: {
                         name: checkRole.name,
                         _id: checkRole._id,
                     },
@@ -116,8 +132,8 @@ const authService = {
             else {
                 throw new Error("cant create employee")
             }
-        }catch(error){
-            await User.findOneAndDelete({email})
+        } catch (error) {
+            await User.findOneAndDelete({ email })
             throw new Error("cant create employee")
         }
 

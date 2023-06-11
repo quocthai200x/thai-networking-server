@@ -144,6 +144,259 @@ function getApplicationBasedNotEndStatus({ statusValue, companyId }) {
 }
 
 const StatisticService = {
+    getAverageTime: async (from, to, employerEmail, jobName, companyId) => {
+        if ((typeof to !== 'string' || isNaN(new Date(to).getTime())) || (typeof from !== 'string' || isNaN(new Date(from).getTime()))) {
+            to = "2100-01-01";
+            from = "1970-01-01";
+        }
+        let employerId = "";
+        let jobId = "";
+        if (employerEmail) {
+            const userFound = await User.findOne({ email: employerEmail, companyId, roleNumber: 2 })
+            if (userFound) {
+                employerId = userFound._id
+            }
+        }
+        if (jobName) {
+            const jobFound = await Job.findOne({ companyId, "info.name": jobName })
+            if (jobFound) {
+                jobId = jobFound._id
+            }
+        }
+        const [averageTimePerEmployee, averageTimePerJob] = await Promise.all([
+            Application.aggregate([
+                {
+                    $match: {
+                        companyId: mongoose.Types.ObjectId(companyId),
+                        "status.value": applicationDictionary.status.getHired.value,
+                        closeAt: {
+                            $gte: new Date(from),
+                            $lte: new Date(to)
+                        },
+                        $expr: {
+                            $and: [
+                                {
+                                    $cond: {
+                                        if: { $ne: [employerId, ""] },
+                                        then: { $eq: ["$handleBy", employerId] },
+                                        else: true
+                                    }
+                                },
+                                {
+                                    $cond: {
+                                        if: { $ne: [jobId, ""] },
+                                        then: { $eq: ["$jobId", jobId] },
+                                        else: true
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
+               
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "handleBy",
+                        foreignField: "_id",
+                        as: "handleByInfo"
+                    }
+                },
+                {
+                    $unwind: "$handleByInfo"
+                },
+                {
+                    $addFields: {
+                        timeCreatedToApproved: {
+                            $subtract: ["$approvedAt", "$createdAt"]
+                        },
+                        timeApproveToInterview: {
+                            $subtract: ["$interviewedAt", "$approvedAt"]
+                        },
+                        timeInterviewToOffer: {
+                            $subtract: ["$offeredAt", "$interviewedAt"]
+                        },
+                        timeOfferToHired: {
+                            $subtract: ["$closeAt", "$offeredAt"]
+                        },
+                        totalTime: {
+                            $subtract: ["$closeAt", "$createdAt"]
+                        },
+    
+                    }
+                },
+                {
+                    $group: {
+                        _id: {
+                            handleByName: "$handleByInfo.info.name",
+                            handlerEmail: "$handleByInfo.email",
+    
+                        },
+                        // total: { $sum: 1 },
+                        // totalScore: { $sum: "$timeCreatedToApproved" },
+                        totalAvg: { $avg: "$totalTime" },
+                        avgTimeCreatedToApproved: { $avg: "$timeCreatedToApproved" },
+                        avgTimeApproveToInterview: { $avg: "$timeApproveToInterview" },
+                        avgTimeInterviewToOffer: { $avg: "$timeInterviewToOffer" },
+                        avgTimeOfferToHired: { $avg: "$timeOfferToHired" },
+    
+                    }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalAvg: {
+                            $avg: "$totalAvg"
+                        },
+                        avgTimeCreatedToApproved: {
+                            $avg: "$avgTimeCreatedToApproved"
+                        },
+                        avgTimeApproveToInterview: {
+                            $avg: "$avgTimeApproveToInterview"
+                        },
+                        avgTimeInterviewToOffer: {
+                            $avg: "$avgTimeInterviewToOffer"
+                        },
+                        avgTimeOfferToHired: {
+                            $avg: "$avgTimeOfferToHired"
+                        },
+    
+                        dataEachEmployer: {
+                            $push: "$$ROOT"
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        dataEachEmployer: 1,
+                        avgTimeCreatedToApproved: 1,
+                        avgTimeApproveToInterview: 1,
+                        avgTimeInterviewToOffer: 1,
+                        avgTimeOfferToHired: 1,
+                        totalAvg:1
+    
+                    }
+                }
+            ]),
+            Application.aggregate([
+                {
+                    $match: {
+                        companyId: mongoose.Types.ObjectId(companyId),
+                        "status.value": applicationDictionary.status.getHired.value,
+                        closeAt: {
+                            $gte: new Date(from),
+                            $lte: new Date(to)
+                        },
+                        $expr: {
+                            $and: [
+                                {
+                                    $cond: {
+                                        if: { $ne: [employerId, ""] },
+                                        then: { $eq: ["$handleBy", employerId] },
+                                        else: true
+                                    }
+                                },
+                                {
+                                    $cond: {
+                                        if: { $ne: [jobId, ""] },
+                                        then: { $eq: ["$jobId", jobId] },
+                                        else: true
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "jobs",
+                        localField: "jobId",
+                        foreignField: "_id",
+                        as: "jobInfo"
+                    }
+                },
+                {
+                    $unwind: "$jobInfo"
+                },
+     
+                {
+                    $addFields: {
+                        timeCreatedToApproved: {
+                            $subtract: ["$approvedAt", "$createdAt"]
+                        },
+                        timeApproveToInterview: {
+                            $subtract: ["$interviewedAt", "$approvedAt"]
+                        },
+                        timeInterviewToOffer: {
+                            $subtract: ["$offeredAt", "$interviewedAt"]
+                        },
+                        timeOfferToHired: {
+                            $subtract: ["$closeAt", "$offeredAt"]
+                        },
+                        totalTime: {
+                            $subtract: ["$closeAt", "$createdAt"]
+                        },
+    
+                    }
+                },
+            
+                {
+                    $group: {
+                        _id: {
+                            jobName: "$jobInfo.info.name",
+                        },
+                        // total: { $sum: 1 },
+                        // totalScore: { $sum: "$timeCreatedToApproved" },
+                        totalAvg: {$avg: "$totalTime"},
+                        avgTimeCreatedToApproved: { $avg: "$timeCreatedToApproved" },
+                        avgTimeApproveToInterview: { $avg: "$timeApproveToInterview" },
+                        avgTimeInterviewToOffer: { $avg: "$timeInterviewToOffer" },
+                        avgTimeOfferToHired: { $avg: "$timeOfferToHired" },
+    
+                    }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalAvg: {
+                            $avg: "$totalAvg"
+                        },
+                        avgTimeCreatedToApproved: {
+                            $avg: "$avgTimeCreatedToApproved"
+                        },
+                        avgTimeApproveToInterview: {
+                            $avg: "$avgTimeApproveToInterview"
+                        },
+                        avgTimeInterviewToOffer: {
+                            $avg: "$avgTimeInterviewToOffer"
+                        },
+                        avgTimeOfferToHired: {
+                            $avg: "$avgTimeOfferToHired"
+                        },
+                         
+                        dataEachJob: {
+                            $push: "$$ROOT"
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        dataEachJob: 1,
+                        avgTimeCreatedToApproved: 1,
+                        avgTimeApproveToInterview: 1,
+                        avgTimeInterviewToOffer: 1,
+                        avgTimeOfferToHired: 1,
+                        totalAvg: 1
+                    }
+                }
+            ]),
+
+        ])
+       
+        return {averageTimePerEmployee,averageTimePerJob }
+    },
     getLeaderBoard: async (from, to, employerEmail, jobName, companyId) => {
         if ((typeof to !== 'string' || isNaN(new Date(to).getTime())) || (typeof from !== 'string' || isNaN(new Date(from).getTime()))) {
             to = "2100-01-01";
@@ -165,93 +418,93 @@ const StatisticService = {
         }
         const applicationFound = await Application.aggregate([
             {
-              $match: {
-                companyId: mongoose.Types.ObjectId(companyId),
-                "status.value": applicationDictionary.status.getHired.value,
-                closeAt: {
-                  $gte: new Date(from),
-                  $lte: new Date(to)
-                },
-                $expr: {
-                  $and: [
-                    {
-                      $cond: {
-                        if: { $ne: [employerId, ""] },
-                        then: { $eq: ["$handleBy", employerId] },
-                        else: true
-                      }
+                $match: {
+                    companyId: mongoose.Types.ObjectId(companyId),
+                    "status.value": applicationDictionary.status.getHired.value,
+                    closeAt: {
+                        $gte: new Date(from),
+                        $lte: new Date(to)
                     },
-                    {
-                      $cond: {
-                        if: { $ne: [jobId, ""] },
-                        then: { $eq: ["$jobId", jobId] },
-                        else: true
-                      }
+                    $expr: {
+                        $and: [
+                            {
+                                $cond: {
+                                    if: { $ne: [employerId, ""] },
+                                    then: { $eq: ["$handleBy", employerId] },
+                                    else: true
+                                }
+                            },
+                            {
+                                $cond: {
+                                    if: { $ne: [jobId, ""] },
+                                    then: { $eq: ["$jobId", jobId] },
+                                    else: true
+                                }
+                            }
+                        ]
                     }
-                  ]
                 }
-              }
             },
             {
-              $lookup: {
-                from: "jobs",
-                localField: "jobId",
-                foreignField: "_id",
-                as: "jobInfo"
-              }
+                $lookup: {
+                    from: "jobs",
+                    localField: "jobId",
+                    foreignField: "_id",
+                    as: "jobInfo"
+                }
             },
             {
-              $unwind: "$jobInfo"
+                $unwind: "$jobInfo"
             },
             {
-              $lookup: {
-                from: "users",
-                localField: "handleBy",
-                foreignField: "_id",
-                as: "handleByInfo"
-              }
+                $lookup: {
+                    from: "users",
+                    localField: "handleBy",
+                    foreignField: "_id",
+                    as: "handleByInfo"
+                }
             },
             {
-              $unwind: "$handleByInfo"
+                $unwind: "$handleByInfo"
             },
             {
-              $group: {
-                _id: {
-                  handleByName: "$handleByInfo.info.name",
-                  handlerEmail: "$handleByInfo.email",
-                  jobName: "$jobInfo.info.name"
-                },
-                totalScore: { $sum: "$score" }
-              }
+                $group: {
+                    _id: {
+                        handleByName: "$handleByInfo.info.name",
+                        handlerEmail: "$handleByInfo.email",
+                        jobName: "$jobInfo.info.name"
+                    },
+                    totalScore: { $sum: "$score" }
+                }
             },
             {
-              $group: {
-                _id: {
-                  handleByName: "$_id.handleByName",
-                  handlerEmail: "$_id.handlerEmail"
-                },
-                data: {
-                  $push: {
-                    jobName: "$_id.jobName",
-                    totalScore: "$totalScore"
-                  }
-                },
-                totalScore: { $sum: "$totalScore" }
-              }
+                $group: {
+                    _id: {
+                        handleByName: "$_id.handleByName",
+                        handlerEmail: "$_id.handlerEmail"
+                    },
+                    data: {
+                        $push: {
+                            jobName: "$_id.jobName",
+                            totalScore: "$totalScore"
+                        }
+                    },
+                    totalScore: { $sum: "$totalScore" }
+                }
             },
             {
-              $sort: { totalScore: 1 }
+                $sort: { totalScore: 1 }
             },
             {
-              $project: {
-                _id: 0,
-                handleByName: "$_id.handleByName",
-                handlerEmail: "$_id.handlerEmail",
-                data: 1,
-                totalScore: 1
-              }
+                $project: {
+                    _id: 0,
+                    handleByName: "$_id.handleByName",
+                    handlerEmail: "$_id.handlerEmail",
+                    data: 1,
+                    totalScore: 1
+                }
             }
-          ]);
+        ]);
         return applicationFound
     },
     getCreatedBy: async (from, to, employerEmail, jobName, companyId) => {

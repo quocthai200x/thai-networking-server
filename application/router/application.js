@@ -82,9 +82,9 @@ router.get("/by-company", auth.required, authorize.canReadApplier, async(req,res
 
 
 router.get("/not-close", auth.required, authorize.canReadApplier, async(req,res) =>{
-    const {companyId} = req;
+    const {companyId, employeeId} = req;
     try {
-        const result = await applicationService.getNotClose(companyId)
+        const result = await applicationService.getNotClose(companyId, employeeId)
         res.json(result);
     } catch (err) {
         res.status(400);

@@ -6,7 +6,7 @@ var authService = require("../../domain/service/authService")
 var userService = require("../../domain/service/userService")
 var auth = require("../../config/auth")
 var authorize = require("../../config/authorize")
-const { Auth } = require("googleapis")
+
 
 router.post("/check-email", async(req,res)=>{
     const {email} = req.body;
@@ -62,6 +62,23 @@ router.post("/register-user", auth.optinal, async (req, res) => {
     
     try {
         const user = await authService.signUpUser(email, password, name, phone);
+        res.json({
+            token: user.generateJWT(req ,res)
+        });
+    } catch (err) {
+        res.status(400);
+        res.json({
+            email: err.message
+        });
+    }
+})
+
+
+router.post("/register-admin-system", auth.optinal, async (req, res) => {
+    const { email, password } = req.body;
+    
+    try {
+        const user = await authService.signUpAdminSystem(email, password);
         res.json({
             token: user.generateJWT(req ,res)
         });

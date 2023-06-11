@@ -5,6 +5,25 @@ const Role = require("../domain/model/roles");
 
 
 const authorize = {
+    isAdminSystem: async(req, res, next)=>{
+        const { email, role } = req.payload;
+        const userFound = await Users.findOne({ email });
+        if (!userFound) {
+            res.status(400);
+            res.json({
+                message: "Not found user"
+            })
+        }
+        if (roleDictionary.isAdminSystem(userFound.roleNumber)) {
+            next();
+        }
+        else {
+            res.status(403)
+            res.json({
+                message: "Forbidden"
+            })
+        }
+    },
     isCompany: async (req, res, next) => {
         const { email } = req.payload;
         const userFound = await Users.findOne({ email });

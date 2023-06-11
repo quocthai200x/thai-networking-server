@@ -8,10 +8,12 @@ var roleRouter = require("./role")
 var applicationRouter = require("./application")
 var searchRouter = require("./search")
 var statisticRouter = require("./statistic")
-
+var adminSytemRouter = require("./adminsystem")
 
 
 router.use("/auth",authRouter);
+router.use("/admin-system",adminSytemRouter);
+
 router.use("/job",jobRouter);
 router.use("/user",userRouter);
 router.use("/company", companyRouter);
