@@ -474,6 +474,7 @@ const StatisticService = {
                         handlerEmail: "$handleByInfo.email",
                         jobName: "$jobInfo.info.name"
                     },
+                    total: {$sum: 1},
                     totalScore: { $sum: "$score" }
                 }
             },
@@ -486,9 +487,11 @@ const StatisticService = {
                     data: {
                         $push: {
                             jobName: "$_id.jobName",
-                            totalScore: "$totalScore"
+                            totalScore: "$totalScore",
+                            total: "$total"
                         }
                     },
+                    total:  { $sum: "$total" },
                     totalScore: { $sum: "$totalScore" }
                 }
             },
@@ -501,6 +504,7 @@ const StatisticService = {
                     handleByName: "$_id.handleByName",
                     handlerEmail: "$_id.handlerEmail",
                     data: 1,
+                    total: 1,
                     totalScore: 1
                 }
             }
