@@ -21,6 +21,19 @@ router.get('/jobs-name', auth.required, authorize.isCompany, async(req,res)=>{
     }
 })
 
+router.get('/jobs-name-by-employer', auth.required, authorize.isEmployer, async(req,res)=>{
+    try {
+        const { companyId, employerId } = req;
+        const listJobsName = await jobService.getListJobsNameByEmployer(companyId,employerId);
+        res.json(listJobsName);
+    } catch (err) {
+        res.status(400);
+        res.json({
+            code: err.message
+        })
+    }
+})
+
 router.get('/status-count', auth.required, authorize.isCompany, async (req, res) => {
     try {
         const { companyId } = req;

@@ -8,6 +8,25 @@ const mongoose = require('mongoose');
 
 
 const jobService = {
+    getListJobsNameByEmployer: async (companyId, employerId) => {
+        console.log("Hello------------------" + employerId)
+        try {
+            let jobsFound;
+            if(employerId){
+                 jobsFound = await Job.find({ companyId, recruiterAttached: employerId }).select({ "info.name": 1, "info.recruitmentProcess": 1 }).sort("info.name")
+            }else{
+                jobsFound = await Job.find({ companyId }).select({ "info.name": 1, "info.recruitmentProcess": 1 }).sort("info.name")
+            }
+            if (jobsFound) {
+                return jobsFound;
+            } else {
+                throw new Error("Not found")
+            }
+        } catch (error) {
+            throw new Error(error)
+
+        }
+    },
     getListJobsName: async (companyId) => {
         try {
             const jobsFound = await Job.find({ companyId }).select({ "info.name": 1, "info.recruitmentProcess": 1 }).sort("info.name")

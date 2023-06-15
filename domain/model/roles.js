@@ -26,6 +26,9 @@ var RoleSchema = new Schema({
         statisticFunction: {
             canReadStatistic: {type :Boolean, default: false},
         },
+        adminFunction : {
+            isAdmin: {type: Boolean, default: false},
+        } 
     }
    
 }, { timestamps: true }

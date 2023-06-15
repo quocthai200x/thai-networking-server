@@ -11,22 +11,22 @@ const path = require("path")
 
 
 const ApplicationService = {
-    getNotClose: async(companyId, employeeId) =>{
+    getNotClose: async (companyId, employeeId) => {
         let applicationFound;
-        if(employeeId){
-            applicationFound = await Application.find({companyId, closeAt: { $exists: false }, handleBy: employeeId })
-            .populate({ path: "candidateId", select: { "info.name": 1 } })
-            .populate({ path: "jobId", select: { "info.name": 1 } })
-            .populate({ path: "handleBy", select: { "info.name": 1 } })
-            .sort({updatedAt: 1})
-        }else{
-            applicationFound = await Application.find({companyId, closeAt: { $exists: false } })
-            .populate({ path: "candidateId", select: { "info.name": 1 } })
-            .populate({ path: "jobId", select: { "info.name": 1 } })
-            .populate({ path: "handleBy", select: { "info.name": 1 } })
+        if (employeeId) {
+            applicationFound = await Application.find({ companyId, closeAt: { $exists: false }, handleBy: employeeId })
+                .populate({ path: "candidateId", select: { "info.name": 1 } })
+                .populate({ path: "jobId", select: { "info.name": 1 } })
+                .populate({ path: "handleBy", select: { "info.name": 1 } })
+                .sort({ updatedAt: 1 })
+        } else {
+            applicationFound = await Application.find({ companyId, closeAt: { $exists: false } })
+                .populate({ path: "candidateId", select: { "info.name": 1 } })
+                .populate({ path: "jobId", select: { "info.name": 1 } })
+                .populate({ path: "handleBy", select: { "info.name": 1 } })
         }
-  
-       
+
+
         if (applicationFound) {
             return {
                 total: applicationFound.length,
@@ -66,11 +66,11 @@ const ApplicationService = {
         // console.log(jobFound)
         console.log(jobFound)
         if (jobFound) {
-            let applicationFound = await Application.find({ companyId, jobId: jobFound._id }).populate([{ path: "candidateId", select: "info" }, {path: "handleBy", select :"info.name"}])
+            let applicationFound = await Application.find({ companyId, jobId: jobFound._id }).populate([{ path: "candidateId", select: "info" }, { path: "handleBy", select: "info.name" }])
             if (applicationFound) {
-                if(employeeId){
+                if (employeeId) {
                     // console.log(applicationFound[0].handleBy.equals(employeeId))
-                    applicationFound = applicationFound.filter(item=> item.handleBy.equals(employeeId))
+                    applicationFound = applicationFound.filter(item => item.handleBy.equals(employeeId))
                     // console.log(applicationFound)
                 }
                 return applicationFound
@@ -111,16 +111,30 @@ const ApplicationService = {
         }
     },
     // getByJob: async(id)
-    invite: async (jobName, candidateEmail, companyId) => {
+    invite: async (jobName, candidateEmail, companyId, employeeHandle) => {
         const JobFound = await Job.findOne({ companyId, "info.name": jobName });
         const UserFound = await User.findOne({ email: candidateEmail, roleNumber: 0 });
-        const adminCompanyFound = await User.findOne({ companyId, roleNumber: 1 })
+        // const adminCompanyFound = await User.findOne({ companyId, roleNumber: 1 })
         // console.log(JobFound)
-        if (UserFound && JobFound && JobFound.status.value == 0 && adminCompanyFound) {
+        if (UserFound && JobFound && JobFound.status.value == 0) {
             const candidateApplierFound = await Application.findOne({ jobId: JobFound._id, candidateId: UserFound._id })
             if (!candidateApplierFound) {
+                let employeeHandleFound = await User.findOne({ email: employeeHandle, roleNumber: 2, companyId, jobAttached: JobFound._id });
+                let firstHanddle;
+                // nếu không thấy tức cần nick admin ra tay
+                // console.log(employeeHandleFound)
+                if (!employeeHandleFound) {
+                    // logic vòng quay nếu không có thằng nào
+                    let currentRecruiterIndex = JobFound.indexRecruiter;
+                    const currentRecruiter = JobFound.recruiterAttached[currentRecruiterIndex];
+                    JobFound.indexRecruiter = (currentRecruiterIndex + 1) % JobFound.recruiterAttached.length;
+                    JobFound.save();
+                    employeeHandleFound = await User.findById(currentRecruiter)
+                }
+                // tìm thấy gắn thẳng nhân viên
+                firstHanddle = employeeHandleFound.info.name
                 const newApplication = new Application({
-                    jobId: JobFound._id, candidateId: UserFound._id, companyId, handleBy: adminCompanyFound._id
+                    jobId: JobFound._id, candidateId: UserFound._id, companyId, handleBy: employeeHandleFound._id, firstHanddle
                 })
                 newApplication.createdBy = applicationDictionary.byCompany;
                 const result = await newApplication.save();
@@ -141,21 +155,21 @@ const ApplicationService = {
         const JobFound = await Job.findOne({ "info.name": jobName, companyId });
         if (JobFound) {
             const candidateApplierFound = await Application.findOne({ jobId: JobFound._id, candidateId: userId })
-            let employeeHandleFound = await User.findOne({ email: employeeHandle, roleNumber: 2, companyId,  jobAttached: { $in: [JobFound._id] }});
+            let employeeHandleFound = await User.findOne({ email: employeeHandle, roleNumber: 2, companyId, jobAttached: JobFound._id });
             let firstHanddle;
             // nếu không thấy tức cần nick admin ra tay
             // console.log(employeeHandleFound)
             if (!employeeHandleFound) {
-                // logic vòng quay
-                employeeHandleFound = await User.findOne({ companyId, roleNumber: 1 })
-                const companyFound = await Company.findById(companyId)
-                firstHanddle = companyFound.info.name
-            } else {
-                // tìm thấy gắn thẳng nhân viên
-
-
-                firstHanddle = employeeHandleFound.info.name
+                // logic vòng quay nếu không có thằng nào
+                let currentRecruiterIndex = JobFound.indexRecruiter;
+                const currentRecruiter = JobFound.recruiterAttached[currentRecruiterIndex];
+                JobFound.indexRecruiter = (currentRecruiterIndex + 1) % JobFound.recruiterAttached.length;
+                JobFound.save();
+                employeeHandleFound = await User.findById(currentRecruiter)
             }
+            // tìm thấy gắn thẳng nhân viên
+            firstHanddle = employeeHandleFound.info.name
+
             if (!candidateApplierFound && employeeHandleFound) {
                 const newApplication = new Application({
                     jobId: JobFound._id, candidateId: userId, companyId, handleBy: employeeHandleFound._id, firstHanddle
@@ -174,11 +188,11 @@ const ApplicationService = {
             throw new Error("Job not existed")
         }
     },
-    getAllByEmployee: async(employeeId) =>{
-        const applicationsFound = await Application.find({handleBy: employeeId}).sort('jobId').populate({ path: "candidateId", select: "info" })
+    getAllByEmployee: async (employeeId) => {
+        const applicationsFound = await Application.find({ handleBy: employeeId }).sort('jobId').populate({ path: "candidateId", select: "info" })
         if (applicationsFound) {
             return {
-                total : applicationsFound.length,
+                total: applicationsFound.length,
                 data: applicationsFound
             }
         } else {
@@ -186,14 +200,12 @@ const ApplicationService = {
         }
     },
     switch: async (applicationId, employeeHandleId, newEmployeeHandle, companyId) => {
-        const [applicationFound, newEmployeeHandleFound] = await Promise.all([
-            Application.findById(applicationId),
-            User.findOne({ email: newEmployeeHandle, companyId, roleNumber: 2 })
-        ]);
+        const applicationFound = await Application.findById(applicationId).populate("jobId");
+        const newEmployeeHandleFound = await User.findOne({ email: newEmployeeHandle, companyId, roleNumber: 2 , jobAttached: applicationFound.jobId._id })
 
-        if (applicationFound  && newEmployeeHandleFound) {
 
-            if(applicationFound.handleBy.toString() == employeeHandleId.toString()){
+        if (applicationFound && newEmployeeHandleFound) {
+            if (applicationFound.handleBy.toString() == employeeHandleId.toString()) {
                 applicationFound.handleBy = newEmployeeHandleFound._id;
                 const result = await applicationFound.save();
                 if (result) {
@@ -201,7 +213,7 @@ const ApplicationService = {
                 } else {
                     throw new Error("Cant attach to new employee")
                 }
-            }else{
+            } else {
                 throw new Error("Wrong owner of application")
 
             }
@@ -295,7 +307,7 @@ const ApplicationService = {
         if (applicationFound
             && applicationFound.status.value == applicationDictionary.status.offer.value
             && applicationFound.candidateId.toString() == userId
-            ) {
+        ) {
             const jobFound = await Job.findById(applicationFound.jobId)
 
             applicationFound.status = applicationDictionary.status.getHired;
@@ -330,7 +342,7 @@ const ApplicationService = {
                     interviewStatus.note = applicationFound.jobId.info.recruitmentProcess[0]
                 }
                 applicationFound.interviewedAt = Date.now()
-                
+
             }
             // giai đoạn nếu có vòng phỏng vấn value 2 (invterview --> interview)
             if (type == 'continue-interview'
@@ -398,7 +410,7 @@ const ApplicationService = {
             throw new Error("Not found ")
         }
     },
-    updateModel: async() => {
+    updateModel: async () => {
         Application.updateMany({}, {
             $set: {
                 "handle": "638cc6231f0417c720905eb6"

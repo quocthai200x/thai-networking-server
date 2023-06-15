@@ -5,7 +5,8 @@ const Role = require("../domain/model/roles");
 
 
 const authorize = {
-    isAdminSystem: async(req, res, next)=>{
+
+    isAdminSystem: async (req, res, next) => {
         const { email, role } = req.payload;
         const userFound = await Users.findOne({ email });
         if (!userFound) {
@@ -44,6 +45,38 @@ const authorize = {
             })
         }
     },
+    isEmployer: async (req, res, next) => {
+        const { email } = req.payload;
+        const userFound = await Users.findOne({ email });
+        if (!userFound) {
+            res.status(400);
+            res.json({
+                message: "Not found user"
+            })
+        }
+        if (roleDictionary.isAdmin(userFound.roleNumber)) {
+            req.companyId = userFound.companyId
+            next();
+        }
+        else if (roleDictionary.isEmployee(userFound.roleNumber)) {
+            const roleFound = await Role.findById(userFound.roleId);
+            if (roleFound.settings.adminFunction.isAdmin) {
+                req.companyId = userFound.companyId
+                next();
+            } else {
+                req.companyId = userFound.companyId
+                req.employerId = userFound._id
+                next();
+            }
+        }
+
+        else {
+            res.status(403)
+            res.json({
+                message: "Forbidden"
+            })
+        }
+    },
     isAdmin: async (req, res, next) => {
         const { email, role } = req.payload;
         const userFound = await Users.findOne({ email });
@@ -75,7 +108,7 @@ const authorize = {
         }
         if (roleDictionary.isAdmin(userFound.roleNumber)) {
             req.companyId = userFound.companyId
-        
+
             next();
         }
         else if (roleDictionary.isEmployee(userFound.roleNumber)) {
@@ -386,7 +419,7 @@ const authorize = {
         }
         if (roleDictionary.isAdmin(userFound.roleNumber)) {
             req.companyId = userFound.companyId
-        
+
             next();
         }
         else if (roleDictionary.isEmployee(userFound.roleNumber)) {

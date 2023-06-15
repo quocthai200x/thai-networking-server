@@ -81,10 +81,10 @@ router.get("/by-company", auth.required, authorize.canReadApplier, async(req,res
 })
 
 
-router.get("/not-close", auth.required, authorize.canReadApplier, async(req,res) =>{
-    const {companyId, employeeId} = req;
+router.get("/not-close", auth.required, authorize.isEmployer, async(req,res) =>{
+    const {companyId, employerId} = req;
     try {
-        const result = await applicationService.getNotClose(companyId, employeeId)
+        const result = await applicationService.getNotClose(companyId, employerId)
         res.json(result);
     } catch (err) {
         res.status(400);
@@ -128,9 +128,9 @@ router.post("/apply", auth.required, authorize.isUser, async (req, res) => {
 
 router.post("/invite", auth.required, authorize.canWriteApplier, async (req, res) => {
     const {companyId} = req;
-    const {candidateEmail, jobName} = req.body
+    const {candidateEmail, jobName, employeeHandle} = req.body
     try {
-        const createApplication = await applicationService.invite(jobName, candidateEmail,companyId);
+        const createApplication = await applicationService.invite(jobName, candidateEmail,companyId, employeeHandle);
         res.json(createApplication)
     } catch (err) {
         res.status(400);
