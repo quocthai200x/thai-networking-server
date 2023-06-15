@@ -2,21 +2,25 @@ var Job = require("../model/jobs")
 var jobDictionary = require("../../config/dictionary/job")
 const Company = require("../model/companies")
 const User = require("../model/users")
+const roleDictionary = require("../../config/dictionary/role")
+const mongoose = require('mongoose');
+
+
 
 const jobService = {
-    getListJobsName: async(companyId)=>{
+    getListJobsName: async (companyId) => {
         try {
-            const jobsFound = await Job.find({companyId}).select({"info.name": 1, "info.recruitmentProcess": 1}).sort("info.name")
-            if(jobsFound){
+            const jobsFound = await Job.find({ companyId }).select({ "info.name": 1, "info.recruitmentProcess": 1 }).sort("info.name")
+            if (jobsFound) {
                 return jobsFound;
-            }else{
+            } else {
                 throw new Error("Not found")
             }
         } catch (error) {
             throw new Error(error)
-            
+
         }
-    }, 
+    },
     findByStatus: async (companyId, status) => {
         try {
             if (status == "show") {
@@ -48,7 +52,7 @@ const jobService = {
             } else if (status == 'expire') {
                 const currentDate = new Date();
                 const expirationThreshold = new Date(currentDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-                const jobFound = await Job.find({ companyId,"info.outdate": { $gte: currentDate, $lt: expirationThreshold } })
+                const jobFound = await Job.find({ companyId, "info.outdate": { $gte: currentDate, $lt: expirationThreshold } })
                     .sort({ createdAt: -1 })
                 if (jobFound) {
                     return jobFound
@@ -169,21 +173,85 @@ const jobService = {
         }
     },
     create: async (companyId, jobInfo) => {
-        // console.log(jobInfo)
-        const jobFound = await Job.findOne({ companyId, "info.name": jobInfo.name })
-        if (jobFound) {
-            throw new Error("Job in company existed");
-        } else {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+        try {
+            const jobFound = await Job.findOne({ companyId, "info.name": jobInfo.name }).session(session);
+
+            if (jobFound) {
+                throw new Error("Job in company already exists");
+            }
+
+
+            const matchingRecruiters = await User.find({ email: { $in: jobInfo.recruiter }, roleNumber: roleDictionary.employee, companyId }).select({ _id: 1 }).session(session);
+
             const job = new Job({
                 companyId,
-                info: jobInfo
-            })
-            const createdJob = await job.save();
-            if (createdJob) {
-                return createdJob;
+                info: jobInfo,
+                recruiterAttached: matchingRecruiters.map(recruiter => recruiter._id),
+            });
+
+            const createdJob = await job.save({ session });
+
+            await User.updateMany(
+                { _id: { $in: matchingRecruiters.map(recruiter => mongoose.Types.ObjectId(recruiter._id)) } },
+                { $push: { jobAttached: createdJob._id } },
+                { session }
+            );
+
+            await session.commitTransaction();
+            session.endSession();
+
+            return createdJob;
+        } catch (error) {
+            await session.abortTransaction();
+            session.endSession();
+
+            throw error;
+        }
+    },
+    updateAttachEmployer: async (companyId, jobName, recruiter) => {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+        try {
+            const jobFound = await Job.findOne({ companyId, "info.name": jobName }).session(session);
+            if (jobFound) {
+                let newMatchingRecruiters = await User.find({ email: { $in: recruiter }, roleNumber: roleDictionary.employee, companyId }).select({ _id: 1 }).session(session);
+                newMatchingRecruiters = newMatchingRecruiters.map(recruiterNew => recruiterNew._id);
+                const oldRecruiters = jobFound.recruiterAttached.map(oldRecruiter => oldRecruiter._id);
+                const oldFilteredRecruiters = oldRecruiters.filter(idRecruiter => !newMatchingRecruiters.includes(idRecruiter));
+                const newFilterRecruiter = newMatchingRecruiters.filter(idRecruiter => !oldRecruiters.includes(idRecruiter));
+                jobFound.recruiterAttached = newMatchingRecruiters;
+                const updatedJob = await jobFound.save({ session });
+
+
+                await User.updateMany(
+                    { _id: { $in: oldFilteredRecruiters.map(recruiter => mongoose.Types.ObjectId(recruiter._id)) } },
+                    { $pull: { jobAttached: updatedJob._id } },
+                    { session }
+                );
+
+                await User.updateMany(
+                    { _id: { $in: newFilterRecruiter.map(recruiter => mongoose.Types.ObjectId(recruiter._id)) } },
+                    { $addToSet: { jobAttached: updatedJob._id } },
+                    { session }
+                );
+
+                await session.commitTransaction();
+                session.endSession();
+
+                return updatedJob;
+
             } else {
-                throw new Error("Cant create job")
+                throw new Error("Job not found");
             }
+
+
+        } catch (error) {
+            await session.abortTransaction();
+            session.endSession();
+
+            throw error;
         }
     },
     update: async (companyId, jobName, jobInfo) => {
@@ -238,7 +306,7 @@ const jobService = {
         // let benefits = []
         Job.updateMany({}, {
             $set: {
-                "info.score":1,
+                "info.score": 1,
                 "info.targetScore": 5,
                 // "info.benefits": benefits
             }
@@ -251,7 +319,7 @@ const jobService = {
             }
         });
 
-       
+
     }
 
 }

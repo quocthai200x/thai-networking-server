@@ -95,6 +95,21 @@ router.put('/', auth.required, authorize.canWriteRecruitment, async (req, res) =
     }
 })
 
+router.put('/update-attach-employer', auth.required, authorize.canWriteRecruitment, async (req, res) => {
+    try {
+        const { companyId } = req;
+        const { jobName, recruiter } = req.body;
+        const updatedJob = await jobService.updateAttachEmployer(companyId, jobName, recruiter);
+        res.json(updatedJob);
+
+    } catch (err) {
+        res.status(400);
+        res.json({
+            code: err.message
+        })
+    }
+})
+
 
 router.get("/others/:jobName_idCompany", auth.optinal, async (req, res) => {
     try {

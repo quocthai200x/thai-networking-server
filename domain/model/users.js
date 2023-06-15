@@ -23,6 +23,7 @@ var UserSchema = new Schema({
     roleNumber: Number,
     roleId: {type:  Schema.Types.ObjectId, ref: 'Role'},
     companyId: {type:  Schema.Types.ObjectId, ref: 'Company'},
+    jobAttached: [ {type:  Schema.Types.ObjectId, ref: 'Job'}],
     
     activity :{
         searchHistory: [String] , // limit 10

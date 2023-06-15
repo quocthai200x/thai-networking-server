@@ -141,11 +141,12 @@ const ApplicationService = {
         const JobFound = await Job.findOne({ "info.name": jobName, companyId });
         if (JobFound) {
             const candidateApplierFound = await Application.findOne({ jobId: JobFound._id, candidateId: userId })
-            let employeeHandleFound = await User.findOne({ email: employeeHandle, roleNumber: 2, companyId })
+            let employeeHandleFound = await User.findOne({ email: employeeHandle, roleNumber: 2, companyId,  jobAttached: { $in: [JobFound._id] }});
             let firstHanddle;
             // nếu không thấy tức cần nick admin ra tay
             // console.log(employeeHandleFound)
             if (!employeeHandleFound) {
+                // logic vòng quay
                 employeeHandleFound = await User.findOne({ companyId, roleNumber: 1 })
                 const companyFound = await Company.findById(companyId)
                 firstHanddle = companyFound.info.name

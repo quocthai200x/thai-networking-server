@@ -64,7 +64,9 @@ var JobSchema = new Schema({
     info: jobInfoSchema,
     // createBy: {type:  Schema.Types.ObjectId, ref: 'User'},
     status: { type: NameValueSchema, default: jobDictionary.status.draft },
-    viewed: {type: Number, default: 0}
+    viewed: {type: Number, default: 0},
+    indexRecruiter: {type: Number, default: 0},
+    recruiterAttached:  [{ type: Schema.Types.ObjectId, ref: 'User' }],
 
 }, { timestamps: true }
 )
