@@ -35,6 +35,21 @@ router.get("/employee", auth.required, authorize.canReadSystemSettings, async (r
 })
 
 
+router.get("/handler/:jobName", auth.required, authorize.isEmployer, async (req, res) => {
+    const { companyId } = req;
+    const {jobName} = req.params;
+    try {
+        const list = await userService.getAllEmployerByJobName(companyId, jobName);
+        res.json(list)
+    } catch (err) {
+        res.status(400);
+        res.json({
+            error: err.message
+        });
+    }
+})
+
+
 
 router.post("/attach-role", auth.required, authorize.canWriteUserPermission, async (req, res) => {
     const { roleName, targetEmail } = req.body;

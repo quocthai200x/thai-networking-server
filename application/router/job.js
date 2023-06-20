@@ -6,7 +6,19 @@ const authorize = require("../../config/authorize")
 var searchService = require("../../domain/service/searchService")
 
 
-
+router.get('/recruiter-attached/:jobName', auth.required, authorize.isCompany, async(req,res)=>{
+    try {
+        const { companyId } = req;
+        const {jobName} = req.params
+        const listEmployer = await jobService.getListRecruiter(companyId, jobName);
+        res.json(listEmployer);
+    } catch (err) {
+        res.status(400);
+        res.json({
+            code: err.message
+        })
+    }
+})
 
 router.get('/jobs-name', auth.required, authorize.isCompany, async(req,res)=>{
     try {
@@ -154,7 +166,7 @@ router.get("/status/:status", auth.required, authorize.isCompany, async (req, re
 
 
 
-router.get("/:jobName_idCompany", auth.optinal, async (req, res) => {
+router.get("/:jobName_idCompany", async (req, res) => {
     try {
         const { jobName_idCompany } = req.params;
         let arr = jobName_idCompany.split('---');

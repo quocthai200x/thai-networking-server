@@ -103,7 +103,9 @@ const ApplicationService = {
         }
     },
     findWithCandidateAndJobID: async (candidateId, jobId) => {
+
         const applicationFound = Application.findOne({ candidateId, jobId })
+
         if (applicationFound) {
             return applicationFound
         } else {
@@ -162,8 +164,8 @@ const ApplicationService = {
             if (!employeeHandleFound) {
                 // logic vòng quay nếu không có thằng nào
                 let currentRecruiterIndex = JobFound.indexRecruiter;
-                const currentRecruiter = JobFound.recruiterAttached[currentRecruiterIndex];
-                JobFound.indexRecruiter = (currentRecruiterIndex + 1) % JobFound.recruiterAttached.length;
+                const currentRecruiter = JobFound.recruiterAttached[currentRecruiterIndex  % JobFound.recruiterAttached.length];
+                JobFound.indexRecruiter = (currentRecruiterIndex + 1);
                 JobFound.save();
                 employeeHandleFound = await User.findById(currentRecruiter)
             }
@@ -201,7 +203,7 @@ const ApplicationService = {
     },
     switch: async (applicationId, employeeHandleId, newEmployeeHandle, companyId) => {
         const applicationFound = await Application.findById(applicationId).populate("jobId");
-        const newEmployeeHandleFound = await User.findOne({ email: newEmployeeHandle, companyId, roleNumber: 2 , jobAttached: applicationFound.jobId._id })
+        const newEmployeeHandleFound = await User.findOne({ email: newEmployeeHandle, companyId, roleNumber: 2, jobAttached: applicationFound.jobId._id })
 
 
         if (applicationFound && newEmployeeHandleFound) {

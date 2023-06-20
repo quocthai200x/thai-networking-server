@@ -2,30 +2,88 @@ var Job = require("../model/jobs")
 var jobDictionary = require("../../config/dictionary/job")
 const Company = require("../model/companies")
 const User = require("../model/users")
+const Application = require("../model/applications")
+
 const roleDictionary = require("../../config/dictionary/role")
 const mongoose = require('mongoose');
 
 
 
 const jobService = {
-    getListJobsNameByEmployer: async (companyId, employerId) => {
-        console.log("Hello------------------" + employerId)
-        try {
-            let jobsFound;
-            if(employerId){
-                 jobsFound = await Job.find({ companyId, recruiterAttached: employerId }).select({ "info.name": 1, "info.recruitmentProcess": 1 }).sort("info.name")
-            }else{
-                jobsFound = await Job.find({ companyId }).select({ "info.name": 1, "info.recruitmentProcess": 1 }).sort("info.name")
-            }
-            if (jobsFound) {
-                return jobsFound;
-            } else {
-                throw new Error("Not found")
-            }
-        } catch (error) {
-            throw new Error(error)
-
+    getListRecruiter: async (companyId, jobName) => {
+        const employerFound = await Job.findOne({companyId, "info.name": jobName})
+        .populate({
+            path: "recruiterAttached",
+            select: { "info.name": 1, "email" : 1 },
+        })
+        .select("recruiterAttached")
+       
+        if(employerFound){
+            return employerFound;
+        }else{
+            throw new Error("Not found")
         }
+    },
+    getListJobsNameByEmployer: async (companyId, employerId) => {
+        try {
+          let jobsFound;
+          if (employerId) {
+            const jobsHandle = await Application.aggregate([
+              {
+                $match: {
+                  companyId: mongoose.Types.ObjectId(companyId),
+                  handleBy: mongoose.Types.ObjectId(employerId),
+                },
+              },
+              {
+                $lookup: {
+                  from: "jobs",
+                  localField: "jobId",
+                  foreignField: "_id",
+                  as: "jobInfo",
+                },
+              },
+              {
+                $unwind: "$jobInfo",
+              },
+              {
+                $group: {
+                  _id: "$jobInfo._id",
+                  name: { $first: "$jobInfo.info.name" },
+                  recruitmentProcess: { $first: "$jobInfo.info.recruitmentProcess" },
+                },
+              },
+              {
+                $project: {
+                  _id: 1,
+                  info: {
+                    name: "$name",
+                    recruitmentProcess: "$recruitmentProcess",
+                  },
+                },
+              },
+            ]);
+            jobsFound = await Job.find({ companyId, recruiterAttached: employerId }).select({
+              "info.name": 1,
+              "info.recruitmentProcess": 1,
+            });
+            const combinedList = jobsFound.concat(jobsHandle);
+            const uniqueList = Array.from(new Set(combinedList.map((item) => item._id.toHexString()))).map(
+              (id) => combinedList.find((item) => item._id.toHexString() === id)
+            );
+            jobsFound = uniqueList;
+          } else {
+            jobsFound = await Job.find({ companyId }).select({ "info.name": 1, "info.recruitmentProcess": 1 }).sort("info.name");
+          }
+          if (jobsFound) {
+            return jobsFound;
+          } else {
+            throw new Error("Not found");
+          }
+        } catch (error) {
+          throw new Error(error);
+        }
+      
     },
     getListJobsName: async (companyId) => {
         try {
@@ -171,7 +229,7 @@ const jobService = {
     // }
     // },
     getJobByName: async (jobName, companyId) => {
-        // console.log(jobName, companyId)
+        console.log(jobName, companyId)
         const jobFound = await Job.findOne({ "info.name": jobName, companyId, "status.name": jobDictionary.status.show.name })
             .select({ status: 0 })
             .populate({ path: "companyId", select: { "info": 1 } })

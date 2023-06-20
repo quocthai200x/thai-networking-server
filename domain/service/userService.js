@@ -8,7 +8,20 @@ const User = require("../model/users");
 
 
 const userService = {
-
+    getAllEmployerByJobName: async (companyId, jobName) => {
+        const jobFound = await Jobs.findOne({ companyId, "info.name": jobName })
+        .populate({
+          path: "recruiterAttached",
+          select: "email info.name updatedAt"
+        })
+        .select("recruiterAttached")
+        if (jobFound) {
+            return jobFound.recruiterAttached;
+        }
+        else {
+            throw new Error("Not found job")
+        }
+    },
     getCandidate: async (userId) => {
         const [userFound, applicationFound] = await Promise.all([
             User.findById(userId).select({
@@ -44,7 +57,7 @@ const userService = {
             })
         if (usersFound) {
             return usersFound
-            
+
         }
         else {
             throw new Error("Lỗi")
