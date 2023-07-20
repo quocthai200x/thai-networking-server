@@ -5,9 +5,8 @@
   "license": "MIT",
   "scripts": {
     "start": "set NODE_ENV=development && nodemon --inspect index.js",
-    "build": "set NODE_ENV=production && nodemon --inspect index.js",
+    "build": "babel . --out-dir dist --ignore \"node_modules,**/*.test.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
-   
   },
   "dependencies": {
     "@elastic/elasticsearch": "^8.5.0",
@@ -18,11 +17,11 @@
     "crypto": "^1.0.1",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "express-jwt": "^7.7.5",
+    "express-jwt": "^8.4.1",
     "generate-password": "^1.7.0",
     "googleapis": "^109.0.1",
-    "jsonwebtoken": "^8.5.1",
-    "mongoosastic": "^5.0.0",
+    "jsonwebtoken": "^9.0.1",
+    "mongoosastic": "^4.6.0",
     "mongoose": "^6.6.5",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
@@ -30,12 +29,16 @@
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
     "path": "^0.12.7",
-    "uuid": "^9.0.0",
-    "webpack": "^5.75.0",
-    "webpack-cli": "^5.0.1"
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "nodemon": "^2.0.20"
+    "@babel/cli": "^7.22.9",
+    "@babel/core": "^7.22.9",
+    "@babel/plugin-proposal-class-properties": "^7.18.6",
+    "@babel/preset-env": "^7.22.9",
+    "nodemon": "^3.0.1",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
   },
   "engines": {
     "node": "18.12.1"
