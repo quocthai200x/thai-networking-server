@@ -9,11 +9,11 @@ var applicationRouter = require("./application")
 var searchRouter = require("./search")
 var statisticRouter = require("./statistic")
 var adminSytemRouter = require("./adminsystem")
-
+var fakeRouter = require("./faker")
 
 router.use("/auth",authRouter);
 router.use("/admin-system",adminSytemRouter);
-
+router.use("/fake", fakeRouter)
 router.use("/job",jobRouter);
 router.use("/user",userRouter);
 router.use("/company", companyRouter);

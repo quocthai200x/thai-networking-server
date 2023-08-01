@@ -127,11 +127,16 @@ const ApplicationService = {
                 // console.log(employeeHandleFound)
                 if (!employeeHandleFound) {
                     // logic vòng quay nếu không có thằng nào
-                    let currentRecruiterIndex = JobFound.indexRecruiter;
-                    const currentRecruiter = JobFound.recruiterAttached[currentRecruiterIndex];
-                    JobFound.indexRecruiter = (currentRecruiterIndex + 1) % JobFound.recruiterAttached.length;
-                    JobFound.save();
-                    employeeHandleFound = await User.findById(currentRecruiter)
+                    if(JobFound.recruiterAttached.length != 0){
+
+                        let currentRecruiterIndex = JobFound.indexRecruiter;
+                        const currentRecruiter = JobFound.recruiterAttached[currentRecruiterIndex];
+                        JobFound.indexRecruiter = (currentRecruiterIndex + 1) % JobFound.recruiterAttached.length;
+                        JobFound.save();
+                        employeeHandleFound = await User.findById(currentRecruiter)
+                    }else{
+                        employeeHandleFound = await User.findOne({roleNumber: 1, companyId})
+                    }
                 }
                 // tìm thấy gắn thẳng nhân viên
                 firstHanddle = employeeHandleFound.info.name
@@ -163,11 +168,16 @@ const ApplicationService = {
             // console.log(employeeHandleFound)
             if (!employeeHandleFound) {
                 // logic vòng quay nếu không có thằng nào
-                let currentRecruiterIndex = JobFound.indexRecruiter;
-                const currentRecruiter = JobFound.recruiterAttached[currentRecruiterIndex  % JobFound.recruiterAttached.length];
-                JobFound.indexRecruiter = (currentRecruiterIndex + 1);
-                JobFound.save();
-                employeeHandleFound = await User.findById(currentRecruiter)
+                if(JobFound.recruiterAttached.length != 0){
+                    let currentRecruiterIndex = JobFound.indexRecruiter;
+                    const currentRecruiter = JobFound.recruiterAttached[currentRecruiterIndex  % JobFound.recruiterAttached.length];
+                    JobFound.indexRecruiter = (currentRecruiterIndex + 1);
+                    JobFound.save();
+                    employeeHandleFound = await User.findById(currentRecruiter)
+                }else{
+                    // nếu job chưa attach ai thì mặc định sẽ về tay nick root
+                    employeeHandleFound = await User.findOne({roleNumber: 1, companyId})
+                }
             }
             // tìm thấy gắn thẳng nhân viên
             firstHanddle = employeeHandleFound.info.name
