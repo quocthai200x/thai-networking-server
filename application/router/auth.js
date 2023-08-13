@@ -57,7 +57,7 @@ router.post("/login", async (req, res,next) => {
 
 })
 
-router.post("/register-user", auth.optinal, async (req, res) => {
+router.post("/register-user", async (req, res) => {
     const { email, password, name, phone } = req.body;
     
     try {
